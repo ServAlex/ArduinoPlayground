@@ -6,6 +6,9 @@
 // light sensor lib
 #include <BH1750FVI.h>
 
+// temp humidity sensor
+#include <Adafruit_SHT31.h>
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
@@ -16,6 +19,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // Create the Lightsensor instance
 BH1750FVI LightSensor(BH1750FVI::k_DevModeContLowRes);
 
+// Create Humidity sensor instance
+Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
 void setup() {
   Serial.begin(115200);
@@ -27,6 +32,8 @@ void setup() {
   }
 
 	LightSensor.begin();
+
+	sht31.begin(0x44);
 
 	display.clearDisplay();
 
@@ -76,6 +83,7 @@ void setup() {
 
 int intensity_min = 8;
 int intensity_max = 60;
+float joystick_voltage = 5.0f;
 
 void loop(){
 /*
@@ -85,10 +93,26 @@ void loop(){
 */ 
 	uint16_t lux = LightSensor.GetLightIntensity();
 	int normalizer = 5;
-	float unscaled = log(lux+normalizer)/log(1.2);
+	float unscaled_lux = log(lux+normalizer)/log(1.2);
 
-	int x = (int)((unscaled-intensity_min)/(intensity_max - intensity_min)*SCREEN_WIDTH);
+	int lux_index = (int)((unscaled_lux-intensity_min)/(intensity_max - intensity_min)*(SCREEN_HEIGHT - 11));
 //	int x = (int)((float)lux/intensity_max*SCREEN_WIDTH);
+
+	float temp = sht31.readTemperature();
+	float hum = sht31.readHumidity();
+
+	if(isnan(temp))
+		temp = 0;
+
+	if(isnan(hum))
+		hum = 0;
+
+/*
+	int xreading = analogRead(A14);
+	float x = xreading*SCREEN_WIDTH/joystick_voltage;
+	float y = analogRead(A15)*SCREEN_HEIGHT/joystick_voltage;
+	Serial.println(xreading, DEC);
+*/
 
 /*
 	Serial.print("Lux: \t");
@@ -97,16 +121,24 @@ void loop(){
 	Serial.println(x);
 */
 	display.clearDisplay();
-	display.drawLine(x, 0, x, 30, WHITE);
+	display.drawLine(0, (SCREEN_HEIGHT - 11) - lux_index, 20, (SCREEN_HEIGHT - 11) - lux_index, WHITE);
+
+//	display.drawLine(x, SCREEN_HEIGHT-10, x, SCREEN_HEIGHT+10, WHITE);
+//	display.drawLine(SCREEN_WIDTH-10, y, SCREEN_WIDTH+10, y, WHITE);
 
 	display.setCursor(10, SCREEN_HEIGHT - 10);
 	display.print(lux);
 
-	display.setCursor(60, SCREEN_HEIGHT - 10);
-	display.print(unscaled);
+	display.setCursor(50, SCREEN_HEIGHT - 10);
+	display.print(temp);
+	display.setCursor(SCREEN_WIDTH - 35, SCREEN_HEIGHT - 10);
+	display.print(hum);
 
+/*	display.setCursor(60, SCREEN_HEIGHT - 10);
+	display.print(unscaled_lux);
 	display.setCursor(SCREEN_WIDTH - 25, SCREEN_HEIGHT - 10);
 	display.print(x);
+*/
 
 	display.display();
 
