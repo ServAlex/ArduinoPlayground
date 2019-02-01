@@ -22,6 +22,9 @@ BH1750FVI LightSensor(BH1750FVI::k_DevModeContLowRes);
 // Create Humidity sensor instance
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
+int x = 0;
+int y = 0;
+
 void setup() {
   Serial.begin(115200);
 
@@ -30,6 +33,15 @@ void setup() {
     Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
+
+	pinMode(2, INPUT_PULLUP);
+	pinMode(3, INPUT_PULLUP);
+	pinMode(4, INPUT_PULLUP);
+	pinMode(5, INPUT_PULLUP);
+	pinMode(6, INPUT_PULLUP);
+
+	x = SCREEN_WIDTH/2;
+	y = SCREEN_HEIGHT/2;
 
 	LightSensor.begin();
 
@@ -85,6 +97,7 @@ int intensity_min = 8;
 int intensity_max = 60;
 float joystick_voltage = 5.0f;
 
+
 void loop(){
 /*
   display.setCursor(0, 0);
@@ -106,6 +119,15 @@ void loop(){
 
 	if(isnan(hum))
 		hum = 0;
+
+	int left = 	1 - digitalRead(2);
+	int right = 1 - digitalRead(6);
+	int up = 	1 - digitalRead(3);
+	int down = 	1 - digitalRead(5);
+	int enter = 1 - digitalRead(4);
+
+	x = (x + right - left + SCREEN_WIDTH)%SCREEN_WIDTH;
+	y = (y - up + down + SCREEN_HEIGHT)%SCREEN_HEIGHT;
 
 /*
 	int xreading = analogRead(A14);
@@ -134,6 +156,9 @@ void loop(){
 	display.setCursor(SCREEN_WIDTH - 35, SCREEN_HEIGHT - 10);
 	display.print(hum);
 
+	// buttons
+	display.drawCircle(x, y, 2, INVERSE);
+
 /*	display.setCursor(60, SCREEN_HEIGHT - 10);
 	display.print(unscaled_lux);
 	display.setCursor(SCREEN_WIDTH - 25, SCREEN_HEIGHT - 10);
@@ -142,5 +167,6 @@ void loop(){
 
 	display.display();
 
-	delay((int)(1000.f/60));
+//	delay((int)(1000.f/60));
+	delay(1);
 }
